@@ -1,13 +1,15 @@
 import tomc.gpx.*;
+import controlP5.*;
 
+ControlP5 cp5;
 ArrayList gpx;
 ArrayList points;
 
-//map range
-float longtitude1 = 37.70;//60.14;//24.79;//37.70;//;//40.68;//37.70; //35.6
-float longtitude2 = 37.80;//60.17;//35.78;//40.80;//; //35.78
-float latitude1 = -122.55;//24.89;//139.633;//-74.07;// //139.669
-float latitude2 = -122.35;//24.99;//139.933;//-73.91;// //139.933
+//SF Map range
+float longtitude1 = 37.72; //S
+float longtitude2 = 37.80; //N
+float latitude1 = -122.55; //W
+float latitude2 = -122.35; //E
 
 int id = 0;
 float offsetx = 0;
@@ -16,15 +18,17 @@ float offsety = 0;
 File dir;
 String[] list;
 
+//Controls
+int sliderValue = 0;
+
 void setup(){
-  size(displayWidth,displayHeight);
-  background(0);
-  dir = new File((System.getProperty("user.home"))+"/Dropbox/Apps/Moves Export/moves_gpx/data");
-  list = dir.list();
-  println(list);
+  size(displayWidth, displayHeight);//(768,432);
+  File path = sketchFile("data");
+  list = path.list();
   
   gpx = new ArrayList();
   points = new ArrayList();
+  
   // inside setup()
   for(int j = 0; j < list.length; j++){
     gpx.add(new GPX(this));
@@ -32,11 +36,22 @@ void setup(){
     GPX temp = (GPX)gpx.get(j);
     temp.parse(list[j]); // or a URL
   }
+  
+  cp5 = new ControlP5(this);
+  
+  // add a horizontal sliders, the value of this slider will be linked
+  // to variable 'sliderValue' 
+  cp5.addSlider("sliderValue")
+     .setPosition(100,100)
+     .setRange(0,109995)
+     .setSize(displayWidth-200,10)
+     .setNumberOfTickMarks(100)
+     ;
+  
   smooth();
   frameRate(30);
   
-  background(0);
-  
+  //Save Dots
   for(int l = 0; l < gpx.size(); l++){
     GPX temp = (GPX)gpx.get(l);
     for (int i = 0; i < temp.getTrackCount(); i++) {
@@ -49,11 +64,11 @@ void setup(){
           // do something with pt.lat or pt.lon
           float lat = map((float)pt.lat, longtitude1-zoom/100+panv/100,longtitude2+zoom/100+panv/100,height,0);
           float lon = map((float)pt.lon, latitude1-zoom*5/300+panh/100, latitude2+zoom*5/300+panh/100, 0, width);
-//          stroke(255,160);
-//          strokeWeight(2);
-//          point(lon,lat);
-            points.add(new Dot(lon,lat));
-            id++;
+          //stroke(255,160);
+          //strokeWeight(2);
+          //point(lon,lat);
+          points.add(new Dot(lon,lat));
+          id++;
         }
       }
     }
@@ -65,36 +80,38 @@ float panh = 0;
 float panv = 1;
 
 int k = -1;
-int sp = 1;
+int sp = 200;
+
+boolean showall = false;
 
 void draw(){
-  background(0);
+  background(65,82,100);
   translate(offsetx, offsety);
   
   //show gradually
-  // if(k < points.size()) k+=sp;
-  // for(int i = 0; i < k; i++) {
-  //   Dot temp = (Dot)points.get(i);
-  //   temp.display();
-  //   if(i > 0){
-  //     Dot temp2 = (Dot)points.get(i-1);
-  //     temp2.start = false;
-  //   }
-  // }
+  //if(k < points.size()) k+=sp;
+  //for(int i = 0; i < k; i++) {
+  //  Dot temp = (Dot)points.get(i);
+  //  temp.display();
+  //  if(i > 0){
+  //    Dot temp2 = (Dot)points.get(i-1);
+  //    temp2.start = false;
+  //  }
+  //}
   
-  // show all at once
-  for(int i = 0; i < points.size(); i++) {
+  //show all at once
+  for(int i = 0; i < sliderValue; i++) {
     Dot temp = (Dot)points.get(i);
     temp.display();
-    if(i > 0){
-      Dot temp2 = (Dot)points.get(i-1);
+    if(i == k-1){
+      Dot temp2 = (Dot)points.get(i);
+      temp2.start = true;
+    }
+    else {
+      Dot temp2 = (Dot)points.get(i);
       temp2.start = false;
     }
   }
-  
-  
-  
-  println(k);
 }
 
 void keyPressed() {
@@ -111,11 +128,15 @@ void keyPressed() {
   }
   else {
     if(key == '-') {
-      if(zoom < 0)
-      zoom+=120;
-      else zoom*=1.6;
+      //if(zoom < 0)
+      //zoom+=120;
+      //else zoom*=1.6;
+      k-=50;
     }
-    else if(key == '=') zoom-=120;
+    else if(key == '=') { 
+      //zoom-=120;
+      k+=50;
+    }
   }
 }
 
@@ -127,7 +148,7 @@ class Dot{
   Dot(float x, float y){
     xpos = x;
     ypos = y;
-    start = true;
+    start = false;
     idDot = id;
   }
   void display(){
@@ -138,16 +159,17 @@ class Dot{
     if(start){
       fill(255,50);
       noStroke();
-      ellipse(xpos, ypos, 20,20);
+      ellipse(xpos, ypos, 40,40);
     } else {
-      fill(255,20);
+      fill(255,120);
       noStroke();
-      ellipse(xpos, ypos, 2,2);
+      ellipse(xpos, ypos, 3,3);
     }
+    //Draw Lines
     if(idDot!=0){
       Dot temp = (Dot)points.get(idDot-1);
-      strokeWeight(2);
-      stroke(255,30);
+      strokeWeight(1);
+      stroke(0,199,250,120);
       line(temp.xpos,temp.ypos, xpos, ypos);
     }
   }
